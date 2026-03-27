@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Exam Portal Login</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body {
+    background: url("https://th.bing.com/th/id/OIP.HMstYauEFAZXTg-lm9ticwHaEJ?w=316&h=180&c=7&r=0&o=7&pid=1.7&rm=3") no-repeat center center/cover;
+}
+</style>
+
+</head>
+
+<body class="flex items-center justify-center h-screen">
+
+<!-- Glass Card -->
+<div class="bg-black bg-opacity-50 backdrop-blur-lg p-8 rounded-2xl w-[400px] text-white shadow-2xl">
+
+    <!-- Title -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold tracking-wide">Exam Portal</h1>
+        <p class="text-gray-300 text-sm">Secure Online Assessment System</p>
+    </div>
+
+    <!-- Inputs -->
+    <div class="space-y-4">
+        <input id="user" placeholder="Username"
+            class="w-full p-3 rounded-full bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+
+        <input id="pass" type="password" placeholder="Password"
+            class="w-full p-3 rounded-full bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+
+    <!-- Login Button -->
+    <button onclick="login()"
+        class="w-full mt-6 bg-blue-500 text-black py-3 rounded-full font-semibold hover:bg-blue-600 transition">
+        Login
+    </button>
+
+    <!-- Error -->
+    <p id="error" class="text-red-400 text-center mt-3"></p>
+
+    <!-- Footer -->
+    <div class="flex justify-between text-sm mt-5 text-gray-300">
+       <span class="cursor-pointer hover:underline">Forgot Password?</span>
+    </div>
+
+</div>
+
+<script>
+// 🔐 LOGIN FUNCTION
+function login() {
+    fetch("/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: document.getElementById("user").value,
+            password: document.getElementById("pass").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        // ❌ Show backend error (like completed exam / invalid login)
+        if (data.error) {
+            document.getElementById("error").innerText = data.error;
+            return;
+        }
+
+        // ✅ Success login
+        localStorage.setItem("user", data.username);
+
+        if (data.role === "admin") {
+            window.location = "/admin";
+        } else {
+            window.location = "/exam";
+        }
+
+    })
+    .catch(() => {
+        document.getElementById("error").innerText = "Server error";
+    });
+}
+
+// ⌨️ ENTER KEY LOGIN (OUTSIDE FUNCTION)
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        login();
+    }
+});
+</script>
+
+</body>
+</html>

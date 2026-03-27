@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offline Exam System</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+<div class="bg-white p-6 rounded-2xl shadow-lg w-[500px]">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Online Exam</h2>
+        <div id="timer" class="text-red-500 font-semibold">30:00</div>
+    </div>
+
+    <!-- Network Status -->
+    <div id="status" class="mb-3 text-sm text-green-600">Online</div>
+
+    <!-- Question -->
+    <div class="mb-3">
+        <p class="font-medium">Q1: What is Python?</p>
+    </div>
+
+    <!-- Answer Box -->
+    <textarea id="answer"
+        class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        rows="5"
+        placeholder="Type your answer..."></textarea>
+
+    <!-- Buttons -->
+    <div class="flex justify-between mt-4">
+        <button onclick="saveAnswer()" class="bg-blue-500 text-white px-4 py-2 rounded-lg">
+            Save
+        </button>
+
+        <button onclick="submitExam()" class="bg-green-500 text-white px-4 py-2 rounded-lg">
+            Submit
+        </button>
+    </div>
+
+</div>
+
+<script>
+// ==========================
+// TIMER
+// ==========================
+let time = 30 * 60; // 30 mins
+
+let timer = setInterval(() => {
+    let minutes = Math.floor(time / 60);
+    let seconds = time % 60;
+
+    document.getElementById("timer").innerText =
+        `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+    time--;
+
+    if (time < 0) {
+        clearInterval(timer);
+        alert("Time's up! Auto submitting...");
+        submitExam();
+    }
+}, 1000);
+
+// ==========================
+// LOAD SAVED DATA
+// ==========================
+window.onload = () => {
+    let saved = localStorage.getItem("answer");
+    if (saved) document.getElementById("answer").value = saved;
+};
+
+// ==========================
+// AUTO SAVE
+// ==========================
+function saveAnswer() {
+    let ans = document.getElementById("answer").value;
+    localStorage.setItem("answer", ans);
+    alert("Answer saved locally!");
+}
+
+// Auto-save every 5 sec
+setInterval(saveAnswer, 5000);
+
+// ==========================
+// NETWORK STATUS
+// ==========================
+function updateStatus() {
+    const status = document.getElementById("status");
+    if (navigator.onLine) {
+        status.innerText = "Online";
+        status.className = "text-green-600";
+        syncData();
+    } else {
+        status.innerText = "Offline";
+        status.className = "text-red-600";
+    }
+}
+
+window.addEventListener("online", updateStatus);
+window.addEventListener("offline", updateStatus);
+
+// ==========================
+// SYNC DATA
+// ==========================
+function syncData() {
+    let ans = localStorage.getItem("answer");
+
+    if (!ans) return;
+
+    fetch("http://127.0.0.1:5000/save", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({answer: ans})
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Synced:", data);
+    });
+}
+
+// ==========================
+// SUBMIT
+// ==========================
+function submitExam() {
+    saveAnswer();
+    syncData();
+    alert("Exam submitted!");
+}
+
+updateStatus();
+</script>
+
+</body>
+</html>

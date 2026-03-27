@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 flex">
+
+<!-- Sidebar -->
+<div class="w-64 bg-blue-900 text-white min-h-screen p-5">
+    <h2 class="text-2xl font-bold mb-6">Admin Panel</h2>
+
+    <ul>
+        <li class="mb-3">📊 Dashboard</li>
+        <li class="mb-3">➕ Manage Questions</li>
+        <li class="mb-3">👥 Create Users</li>
+        <li class="mb-3 cursor-pointer" onclick="loadResults()">🏆 Leaderboard</li>
+        <li class="mt-10 text-red-300 cursor-pointer" onclick="logout()">🚪 Logout</li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="flex-1 p-6">
+
+    <!-- Top Cards -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-gray-500">Total Students</h3>
+            <p class="text-2xl font-bold">Dynamic</p>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-gray-500">Total Questions</h3>
+            <p class="text-2xl font-bold">15</p>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-gray-500">System Status</h3>
+            <p id="statusText" class="text-green-500 font-bold">Active</p>
+        </div>
+
+    </div>
+
+    <!-- Create User -->
+    <div class="bg-white p-5 rounded shadow mb-6">
+        <h2 class="text-xl font-bold mb-4">Create User</h2>
+
+        <input id="newUser" placeholder="Username"
+            class="block mb-2 p-2 border w-full">
+
+        <input id="newPass" placeholder="Password"
+            class="block mb-2 p-2 border w-full">
+
+        <select id="role" class="block mb-2 p-2 border w-full">
+            <option value="student">Student</option>
+        </select>
+
+        <button onclick="createUser()"
+            class="bg-green-600 text-white px-4 py-2 rounded">
+            Create User
+        </button>
+    </div>
+
+    <!-- Add Question -->
+    <div class="bg-white p-5 rounded shadow mb-6">
+        <h2 class="text-xl font-bold mb-4">Add Question</h2>
+
+        <input id="q" placeholder="Question" class="block mb-2 p-2 border w-full">
+        <input id="o1" placeholder="Option 1" class="block mb-2 p-2 border w-full">
+        <input id="o2" placeholder="Option 2" class="block mb-2 p-2 border w-full">
+        <input id="o3" placeholder="Option 3" class="block mb-2 p-2 border w-full">
+        <input id="o4" placeholder="Option 4" class="block mb-2 p-2 border w-full">
+        <input id="ans" placeholder="Correct Answer" class="block mb-2 p-2 border w-full">
+
+        <button onclick="addQ()"
+            class="bg-blue-600 text-white px-4 py-2 rounded">
+            Add Question
+        </button>
+    </div>
+
+    <!-- Reset Student -->
+    <div class="bg-white p-5 rounded shadow mb-6">
+        <h2 class="text-xl font-bold mb-3">Reset Student</h2>
+
+        <input id="resetUser" placeholder="Enter Username"
+            class="p-2 border w-full mb-2">
+
+        <button onclick="resetStudent()"
+            class="bg-red-500 text-white px-4 py-2 rounded">
+            Reset Student
+        </button>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="bg-white p-5 rounded shadow">
+        <h2 class="text-xl font-bold mb-3">Leaderboard</h2>
+
+        <button onclick="loadResults()"
+            class="bg-purple-600 text-white px-4 py-2 mb-3 rounded">
+            Load Results
+        </button>
+
+        <div id="results"></div>
+    </div>
+
+</div>
+
+<!-- SCRIPT -->
+<script>
+
+// Logout
+function logout() {
+    localStorage.clear();
+    window.location = "/";
+}
+
+// Create User
+function createUser() {
+    fetch("/create_user", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: newUser.value,
+            password: newPass.value,
+            role: role.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+// Add Question
+function addQ() {
+    fetch("/add_question", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            question: q.value,
+            option1: o1.value,
+            option2: o2.value,
+            option3: o3.value,
+            option4: o4.value,
+            answer: ans.value
+        })
+    })
+    .then(() => alert("Question Added"));
+}
+
+// Reset Student
+function resetStudent() {
+    fetch("/reset_student", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: resetUser.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+// Load Leaderboard
+function loadResults() {
+    fetch("/results")
+    .then(res => res.json())
+    .then(data => {
+        let html = `
+        <table class="w-full border">
+        <tr class="bg-gray-200">
+            <th class="p-2">Rank</th>
+            <th>Name</th>
+            <th>Score</th>
+        </tr>`;
+
+        data.forEach((r, i) => {
+            html += `<tr>
+                <td class="p-2">${i+1}</td>
+                <td>${r[0]}</td>
+                <td>${r[1]}</td>
+            </tr>`;
+        });
+
+        html += "</table>";
+        document.getElementById("results").innerHTML = html;
+    });
+}
+
+// System Status
+function updateSystemStatus() {
+    const status = document.getElementById("statusText");
+
+    if (navigator.onLine) {
+        status.innerText = "Active";
+        status.className = "text-green-500 font-bold";
+    } else {
+        status.innerText = "Offline";
+        status.className = "text-red-500 font-bold";
+    }
+}
+
+updateSystemStatus();
+window.addEventListener("online", updateSystemStatus);
+window.addEventListener("offline", updateSystemStatus);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+<!-- Header -->
+<div class="bg-blue-600 text-white p-4 flex justify-between">
+    <h2 class="text-xl font-bold">MCQ Exam</h2>
+    <div>
+        <span id="welcome"></span>
+        <button onclick="logout()" class="ml-4 bg-red-500 px-3 py-1 rounded">Logout</button>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="p-6">
+
+    <!-- Status Bar -->
+    <div class="flex justify-between mb-4">
+        <p id="status" class="text-green-600">Online</p>
+        <p class="font-bold">Auto Save Enabled</p>
+    </div>
+
+    <!-- Questions -->
+    <div id="questions"></div>
+
+    <!-- Submit -->
+    <button onclick="submitExam()" class="bg-green-600 text-white px-5 py-2 rounded mt-4">
+        Submit Exam
+    </button>
+
+</div>
+
+<script>
+let answers = {};
+
+document.getElementById("welcome").innerText =
+    "Welcome " + localStorage.getItem("user");
+
+// 🌐 Network status
+function updateStatus() {
+    document.getElementById("status").innerText =
+        navigator.onLine ? "Online" : "Offline";
+}
+window.addEventListener("online", updateStatus);
+window.addEventListener("offline", updateStatus);
+updateStatus();
+
+// 📥 Load questions
+fetch("/get_questions")
+.then(res => res.json())
+.then(data => display(data));
+
+function display(data) {
+    let html = "";
+    data.forEach(q => {
+        html += `<div class="bg-white p-4 rounded shadow mb-4">
+        <p class="font-semibold">${q[1]}</p>
+        ${[q[2],q[3],q[4],q[5]].map(opt =>
+            `<label class="block">
+                <input type="radio" name="${q[0]}" value="${opt}"> ${opt}
+            </label>`).join("")}
+        </div>`;
+    });
+    document.getElementById("questions").innerHTML = html;
+}
+
+// 💾 Save answers (offline support)
+document.addEventListener("change", (e) => {
+    answers[e.target.name] = e.target.value;
+    localStorage.setItem("answers", JSON.stringify(answers));
+});
+
+// 🚀 SUBMIT + AUTO LOGOUT (UPDATED)
+function submitExam() {
+    fetch("/submit", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: localStorage.getItem("user"),
+            answers: answers
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        // Show score
+        alert("Score: " + data.score);
+
+        // ✅ AUTO LOGOUT AFTER SUBMIT
+        logout();
+
+    })
+    .catch(() => {
+        alert("Submission failed. Try again.");
+    });
+}
+
+// 🚪 Logout
+function logout() {
+    localStorage.clear();
+    window.location = "/";
+}
+</script>
+
+</body>
+</html>
